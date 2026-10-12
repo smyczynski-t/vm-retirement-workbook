@@ -183,9 +183,10 @@ The first row is the dangerous one: a production VM sequenced into wave 1.
 ## The queries
 
 Every Azure Resource Graph query the workbook runs is documented verbatim in
-[`docs/QUERIES.md`](docs/QUERIES.md) - 15 read-only queries, with the shared base
-pipeline shown once and each per-tab tail alongside it. Nothing is hidden: you
-can audit exactly what executes against your tenant before you deploy.
+[`docs/QUERIES.md`](docs/QUERIES.md) - 16 read-only queries, including 15 views
+and the Department selector, with the shared base pipeline shown once and each
+per-tab tail alongside it. Nothing is hidden: you can audit exactly what
+executes against your tenant before you deploy.
 
 ## Sharing the results
 
@@ -269,7 +270,8 @@ button to work.
 `validate_queries.py` needs `az login` and the `resource-graph` CLI extension. It
 verifies that tab links match group visibility conditions, that every query is
 scoped to `{Subscriptions}` and references only declared parameters, and that all
-15 Resource Graph queries execute successfully. Azure Resource Graph throttles
+16 Resource Graph queries (including the Department selector options) execute
+successfully. Azure Resource Graph throttles
 aggressive callers, so an occasional single-query failure on a back-to-back run is
 a rate limit rather than a regression - re-run to confirm.
 

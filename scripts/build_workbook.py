@@ -337,6 +337,8 @@ def base_query(sku_map, tgt_regions, region_ids, include_optional=True):
 
     return f"""resources
 | where type =~ 'microsoft.compute/virtualmachines' or type =~ 'microsoft.compute/virtualmachinescalesets'
+| extend Department = coalesce(tostring(tags['Department']), tostring(tags['department']), '')
+| where 'All' in ({{DepartmentFilter}}) or Department in ({{DepartmentFilter}})
 | extend IsVmss = (type =~ 'microsoft.compute/virtualmachinescalesets')
 // A Flexible-orchestration scale set surfaces BOTH the scale set (carrying
 // sku.capacity) and every member VM as separate Resource Graph rows. Counting
@@ -624,6 +626,35 @@ def build(data):
                     "typeSettings": {"additionalResourceOptions": ["value::all"],
                                      "includeAll": True, "showDefault": False},
                     "value": ["value::all"],
+                },
+                {
+                    "id": "b0a1f2c3-3333-4a33-9c03-000000000003",
+                    "version": "KqlParameterItem/1.0",
+                    "name": "DepartmentFilter",
+                    "label": "Department",
+                    "type": 2,
+                    "isRequired": True,
+                    "multiSelect": True,
+                    "quote": "'",
+                    "delimiter": ",",
+                    "query": """resources
+| where type =~ 'microsoft.compute/virtualmachines' or type =~ 'microsoft.compute/virtualmachinescalesets'
+| extend Department = coalesce(tostring(tags['Department']), tostring(tags['department']), '')
+| where isnotempty(Department)
+| distinct Department
+| union (
+    ResourceContainers
+    | where type =~ 'microsoft.resources/subscriptions'
+    | take 1
+    | project Department = 'All'
+)
+| distinct Department
+| order by Department asc""",
+                    "crossComponentResources": ["{Subscriptions}"],
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "typeSettings": {"additionalResourceOptions": [], "showDefault": False},
+                    "value": ["All"],
                 },
                 {
                     "id": "b0a1f2c3-2222-4a22-9c02-000000000002",
@@ -1263,6 +1294,8 @@ def build(data):
     about.append(arg_query(
         """resources
 | where type =~ 'microsoft.compute/virtualmachines' or type =~ 'microsoft.compute/virtualmachinescalesets'
+| extend Department = coalesce(tostring(tags['Department']), tostring(tags['department']), '')
+| where 'All' in ({DepartmentFilter}) or Department in ({DepartmentFilter})
 | extend IsVmss = (type =~ 'microsoft.compute/virtualmachinescalesets')
 | where IsVmss or isempty(tostring(properties.virtualMachineScaleSet.id))
 | extend VmSize = iff(IsVmss, tostring(sku.name), tostring(properties.hardwareProfile.vmSize))
