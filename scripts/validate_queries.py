@@ -25,6 +25,10 @@ def walk(node, found):
         c = node.get("content")
         if isinstance(c, dict) and c.get("queryType") == 1 and "query" in c:
             found.append((node.get("name", "?"), c["query"]))
+        if node.get("type") == 9:
+            for parameter in c.get("parameters", []):
+                if parameter.get("queryType") == 1 and "query" in parameter:
+                    found.append((parameter.get("name", "?"), parameter["query"]))
         for v in node.values():
             walk(v, found)
     elif isinstance(node, list):
@@ -82,9 +86,14 @@ def structure_check(wb):
                     f"- must be written as {{{p}}}")
 
     for i in items:
-        for node in [i] + (i.get("content", {}).get("items", []) if i.get("type") == 12 else []):
+        nodes = [i] + (i.get("content", {}).get("items", []) if i.get("type") == 12 else [])
+        if i.get("type") == 9:
+            nodes += i["content"]["parameters"]
+        for node in nodes:
             c = node.get("content", {})
-            if c.get("queryType") == 1 and c.get("crossComponentResources") != ["{Subscriptions}"]:
+            if ((c.get("queryType") == 1 or node.get("queryType") == 1)
+                    and node.get("crossComponentResources", c.get("crossComponentResources"))
+                    != ["{Subscriptions}"]):
                 problems.append(f"{node.get('name')}: ARG query not scoped to {{Subscriptions}}")
 
     return problems
@@ -116,7 +125,7 @@ def main():
         try:
             r = subprocess.run(
                 ["az", "graph", "query", "-q", f"@{path}", "--first", "5", "-o", "json"],
-                capture_output=True, text=True, shell=True)
+                capture_output=True, text=True)
             if r.returncode == 0:
                 data = json.loads(r.stdout)
                 cols = list(data["data"][0].keys()) if data["data"] else []

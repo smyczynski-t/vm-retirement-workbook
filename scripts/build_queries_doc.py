@@ -45,6 +45,8 @@ DESCRIPTIONS = {
                        "by lifecycle stage."),
     "about-allsizes": ("About", "Every VM size in scope, including sizes with no "
                        "lifecycle action, as a coverage cross-check."),
+    "DepartmentFilter": ("Filters", "Distinct department tags for the multi-select "
+                         "filter, plus the All option."),
 }
 
 BAG = re.compile(r"parse_json\('\{.*?\}'\)", re.S)
@@ -75,6 +77,12 @@ def collect(items, out, tab=None):
             collect(it["content"]["items"], out, tab)
         elif it.get("type") == 3 and it["content"].get("queryType") == 1:
             out.append((it["name"], it["content"]))
+        elif it.get("type") == 9:
+            out.extend(
+                (p["name"], p)
+                for p in it["content"]["parameters"]
+                if p.get("queryType") == 1 and "query" in p
+            )
     return out
 
 
@@ -86,7 +94,8 @@ def main():
     elided = {name: elide(c["query"]) for name, c in queries}
     # about-allsizes is a standalone coverage query, not part of the fleet
     # pipeline, so it would collapse the shared prefix to nothing.
-    fleet = [q for n, q in elided.items() if n != "about-allsizes"]
+    fleet = [q for n, q in elided.items()
+             if n not in ("about-allsizes", "DepartmentFilter")]
     prefix = common_prefix(fleet)
     prefix_text = "\n".join(prefix)
 
@@ -117,7 +126,7 @@ def main():
         "",
         "- [The shared base query](#the-shared-base-query)",
     ]
-    order = ["Overview", "Impacted resources", "Target mapping", "Prerequisites",
+    order = ["Filters", "Overview", "Impacted resources", "Target mapping", "Prerequisites",
              "Migration plan", "About", "Other"]
     tabs = [t for t in order if t in by_tab]
     for tab in tabs:

@@ -48,7 +48,7 @@
             "multiSelect": true,
             "quote": "'",
             "delimiter": ",",
-            "query": "resources\n| where type =~ 'microsoft.compute/virtualmachines' or type =~ 'microsoft.compute/virtualmachinescalesets'\n| extend Department = coalesce(tostring(tags['Department']), tostring(tags['department']), '')\n| where isnotempty(Department)\n| distinct Department\n| union (print Department = 'All')\n| order by Department asc",
+            "query": "resources\n| where type =~ 'microsoft.compute/virtualmachines' or type =~ 'microsoft.compute/virtualmachinescalesets'\n| extend Department = coalesce(tostring(tags['Department']), tostring(tags['department']), '')\n| where isnotempty(Department)\n| distinct Department\n| union (\n    ResourceContainers\n    | where type =~ 'microsoft.resources/subscriptions'\n    | take 1\n    | project Department = 'All'\n)\n| distinct Department\n| order by Department asc",
             "crossComponentResources": [
               "{Subscriptions}"
             ],

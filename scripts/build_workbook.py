@@ -642,7 +642,13 @@ def build(data):
 | extend Department = coalesce(tostring(tags['Department']), tostring(tags['department']), '')
 | where isnotempty(Department)
 | distinct Department
-| union (print Department = 'All')
+| union (
+    ResourceContainers
+    | where type =~ 'microsoft.resources/subscriptions'
+    | take 1
+    | project Department = 'All'
+)
+| distinct Department
 | order by Department asc""",
                     "crossComponentResources": ["{Subscriptions}"],
                     "queryType": 1,
