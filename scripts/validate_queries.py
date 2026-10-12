@@ -15,6 +15,7 @@ WB = os.path.join(OUT, "azure-vm-retirement-workbook.json")
 # Workbook parameter placeholders are not resolvable outside the portal.
 SUBSTITUTIONS = {
     "{Subscriptions}": "",
+    "{DepartmentFilter}": "'All'",
     "{LifecycleFilter}": "RETIRE,EOL,OPTIONAL",
 }
 
@@ -59,7 +60,7 @@ def structure_check(wb):
     for i in items:
         if i.get("type") == 9:
             params += [p["name"] for p in i["content"]["parameters"]]
-    for required in ("Subscriptions", "LifecycleFilter"):
+    for required in ("Subscriptions", "DepartmentFilter", "LifecycleFilter"):
         if required not in params:
             problems.append(f"missing parameter {required}")
 
